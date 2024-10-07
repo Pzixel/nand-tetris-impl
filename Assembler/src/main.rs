@@ -232,7 +232,7 @@ impl Context {
     }
 
     fn parse_file(&mut self, content: &str) -> Vec<Command> {
-        let code_lines = content.lines()
+        let mut code_lines = content.lines()
             .map(|line| {
                 if let Some(comment_idx) = line.find("//") {
                     line[..comment_idx].trim()
@@ -246,10 +246,10 @@ impl Context {
             .collect::<Vec<_>>()
             ;
         let mut line_number = 0;
-        for line in code_lines.iter() {
+        for line in code_lines.iter_mut() {
             match line {
-                CodeLine::Label(label) => {
-                    self.symbol_table.insert(label.clone(), line_number as u16);
+                CodeLine::Label(ref mut label) => {
+                    self.symbol_table.insert(std::mem::take(label), line_number as u16);
                 }
                 _ => {
                     line_number += 1;
@@ -260,7 +260,7 @@ impl Context {
         code_lines.into_iter().filter_map(|line| {
             match line {
                 CodeLine::A(Address::Variable(symbol)) => {
-                    let address = self.symbol_table.get_or_insert(symbol.clone());
+                    let address = self.symbol_table.get_or_insert(symbol);
                     Some(Command::A(address))
                 }
                 CodeLine::A(Address::Value(address)) => {
