@@ -250,4 +250,9 @@ mod tests {
     fn rect_l() {
         test_program!("Rect", "L");
     }
+
+    #[test]
+    fn pong_l() {
+        test_program!("Pong", "L");
+    }
 }
