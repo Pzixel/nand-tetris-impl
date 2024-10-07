@@ -386,4 +386,14 @@ mod tests {
     fn pong() {
         test_program!("Pong", "");
     }
+
+    #[test]
+    fn fill() {
+        test_program!("Fill", "");
+    }
+
+    #[test]
+    fn mult() {
+        test_program!("Mult", "");
+    }
 }
