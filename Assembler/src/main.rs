@@ -1,5 +1,6 @@
 use core::fmt;
 use std::{env, fmt::Display, str::FromStr};
+use std::io::Write;
 
 #[derive(Debug)]
 struct Dest {
@@ -315,10 +316,14 @@ impl Context {
 
 fn main() {
     let file_name = env::args().nth(1).expect("No file name provided");
-    let file = std::fs::read_to_string(file_name).expect("Could not read file");
+    assert!(file_name.ends_with(".asm"), "File must have .asm extension");
+    let file = std::fs::read_to_string(&file_name).expect("Could not read file");
     let instructions = Context::default().assemble(&file);
+    let out_file = file_name.replace(".asm", ".hack");
+    let file = std::fs::File::create(&out_file).expect("Could not create file");
+    let mut writer = std::io::BufWriter::new(file);
     for instruction in instructions {
-        println!("{}", instruction);
+        writeln!(writer, "{}", instruction).expect("Could not write to file");
     }
 }
 
