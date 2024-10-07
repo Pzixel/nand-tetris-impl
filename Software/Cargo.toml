@@ -1,0 +1,11 @@
+[workspace]
+resolver = "2"
+
+members = [
+    "nandtetris-assembler",
+    "nandtetris-shared",
+    "nandtetris-vm",
+]
+
+[workspace.dependencies]
+derive_more = {version = "1.0.0", features = ["from_str"]}

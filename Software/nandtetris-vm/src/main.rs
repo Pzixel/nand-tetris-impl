@@ -11,7 +11,7 @@ impl Context {
         todo!()
     }
 
-    pub fn parse(&self, code: &str) -> Vec<Instruction> {
+    pub fn parse(&self, code: &str) -> Vec<VmInstruction> {
         let code_lines = code.lines()
             .map(|line| {
                 if let Some(comment_idx) = line.find("//") {
@@ -27,7 +27,7 @@ impl Context {
         code_lines
     }
 
-    fn parse_line(line: &str) -> Instruction {
+    fn parse_line(line: &str) -> VmInstruction {
         let mut parts = line.split_whitespace();
         let command = parts.next().expect("No command found");
         match command {
@@ -36,15 +36,15 @@ impl Context {
                 let index = parts.next().expect("No index found");
                 let segment = Segment::from_str(segment).expect("Invalid segment");
                 let index = index.parse().expect("Invalid index");
-                Instruction::Push { segment, index }
+                VmInstruction::Push { segment, index }
             }
-            "add" => Instruction::Add,
+            "add" => VmInstruction::Add,
             _ => panic!("Invalid command {}", command),
         }
     }
 }
 
-enum Instruction {
+enum VmInstruction {
     Push {
         segment: Segment,
         index: u16,
@@ -52,19 +52,26 @@ enum Instruction {
     Add,
 }
 
-impl Display for Instruction {
+impl Display for VmInstruction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Instruction::Push { segment, index } => match segment {
+            VmInstruction::Push { segment, index } => match segment {
                 Segment::Constant => translate_push_constant(*index, f),
             },
-            Instruction::Add => translate_add(f),
+            VmInstruction::Add => translate_add(f),
         }
     }
 }
 
 fn translate_push_constant(index: u16, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-    todo!()
+    writeln!(f, "@{}", index)?;
+    writeln!(f, "D=A")?;
+    writeln!(f, "@SP")?;
+    writeln!(f, "A=M")?;
+    writeln!(f, "M=D")?;
+    writeln!(f, "@SP")?;
+    writeln!(f, "M=M+1")?;
+    Ok(())
 }
 
 fn translate_add(f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
