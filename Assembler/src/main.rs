@@ -13,15 +13,22 @@ impl From<&Dest> for u16 {
     }
 }
 
-struct Jump {
-    gt: bool,
-    eq: bool,
-    lt: bool,
+#[repr(u16)]
+#[derive(Debug, Clone, Copy, derive_more::FromStr)]
+enum Jump {
+    Null = 0b000,
+    JGT = 0b001,
+    JEQ = 0b010,
+    JGE = 0b011,
+    JLT = 0b100,
+    JNE = 0b101,
+    JLE = 0b110,
+    JMP = 0b111,
 }
 
 impl From<&Jump> for u16 {
     fn from(value: &Jump) -> u16 {
-        u16::from(value.lt as u8) << 2 | u16::from(value.eq as u8) << 1 | u16::from(value.gt as u8)
+        *value as u16
     }
 }
 
@@ -115,7 +122,7 @@ fn parse_line(line: &str) -> Command {
         Command::A(line[1..].parse().expect("Invalid A command"))
     } else {
         let mut dest = Dest { a: false, m: false, d: false };
-        let mut jump = Jump { gt: false, eq: false, lt: false };
+        let mut jump = Jump::Null;
         let mut comp = &line[..];
         if let Some(idx) = line.find('=') {
             let (d, c) = line.split_at(idx);
@@ -124,7 +131,7 @@ fn parse_line(line: &str) -> Command {
                     'A' => dest.a = true,
                     'M' => dest.m = true,
                     'D' => dest.d = true,
-                    _ => panic!("Invalid dest")
+                    _ => panic!("Invalid dest {}", d)
                 }
             }
             comp = &c[1..];
@@ -132,14 +139,7 @@ fn parse_line(line: &str) -> Command {
         if let Some(idx) = comp.find(';') {
             let (c, j) = comp.split_at(idx);
             comp = c;
-            for c in j.chars() {
-                match c {
-                    'G' => jump.gt = true,
-                    'E' => jump.eq = true,
-                    'L' => jump.lt = true,
-                    _ => panic!("Invalid jump")
-                }
-            }
+            jump = j[1..].parse().unwrap_or_else(|e| panic!("Invalid jump {}: {:?}", j, e));
         }
         let comp = match comp {
             "0" => Comp::ZERO,
@@ -170,7 +170,7 @@ fn parse_line(line: &str) -> Command {
             "M-D" => Comp::M_MINUS_D,
             "D&M" => Comp::D_AND_M,
             "D|M" => Comp::D_OR_M,
-            _ => panic!("Invalid comp")
+            _ => panic!("Invalid comp {}", comp)
         };
         Command::C {
             comp,
@@ -195,11 +195,11 @@ mod tests {
 
 
     macro_rules! get_test_files {
-        ($name:literal) => {
+        ($name:literal, $l:literal) => {
             (
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
-                    concat!("/assets/", $name, ".asm")
+                    concat!("/assets/", $name, $l, ".asm")
                 )),
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
@@ -211,7 +211,17 @@ mod tests {
 
     #[test]
     fn add() {
-        let (input, expected) = get_test_files!("Add");
+        let (input, expected) = get_test_files!("Add", "");
+        let expected = expected.lines().collect::<Vec<_>>();
+
+        let instructions = assemble(input);
+        let instructions = instructions.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+        assert_eq!(instructions, expected);
+    }
+
+    #[test]
+    fn max_l() {
+        let (input, expected) = get_test_files!("Max", "L");
         let expected = expected.lines().collect::<Vec<_>>();
 
         let instructions = assemble(input);
