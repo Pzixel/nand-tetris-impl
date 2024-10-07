@@ -225,23 +225,29 @@ mod tests {
         };
     }
 
+    macro_rules! test_program {
+        ($name:literal, $l:literal) => {
+            let (input, expected) = get_test_files!($name, $l);
+            let expected = expected.lines().collect::<Vec<_>>();
+
+            let instructions = assemble(input);
+            let instructions = instructions.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            assert_eq!(instructions, expected);
+        };
+    }
+
     #[test]
     fn add() {
-        let (input, expected) = get_test_files!("Add", "");
-        let expected = expected.lines().collect::<Vec<_>>();
-
-        let instructions = assemble(input);
-        let instructions = instructions.iter().map(|x| x.to_string()).collect::<Vec<_>>();
-        assert_eq!(instructions, expected);
+        test_program!("Add", "");
     }
 
     #[test]
     fn max_l() {
-        let (input, expected) = get_test_files!("Max", "L");
-        let expected = expected.lines().collect::<Vec<_>>();
+        test_program!("Max", "L");
+    }
 
-        let instructions = assemble(input);
-        let instructions = instructions.iter().map(|x| x.to_string()).collect::<Vec<_>>();
-        assert_eq!(instructions, expected);
+    #[test]
+    fn rect_l() {
+        test_program!("Rect", "L");
     }
 }
