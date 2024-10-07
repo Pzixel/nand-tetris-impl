@@ -61,7 +61,23 @@ impl Context {
                                 comp: Comp::A,
                                 jump: Jump::Null,
                             },
-                            CodeLine::A(Address::Variable(predefined_symbols::SP.name.into())),
+                            predefined_symbols::SP.into(),
+                            CodeLine::C {
+                                dest: Dest::A,
+                                comp: Comp::M,
+                                jump: Jump::Null,
+                            },
+                            CodeLine::C {
+                                dest: Dest::M,
+                                comp: Comp::D,
+                                jump: Jump::Null,
+                            },
+                            predefined_symbols::SP.into(),
+                            CodeLine::C {
+                                dest: Dest::M,
+                                comp: Comp::MPlusOne,
+                                jump: Jump::Null,
+                            },
                         ]
                     }
                 }

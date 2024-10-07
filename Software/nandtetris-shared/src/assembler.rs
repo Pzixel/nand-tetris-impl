@@ -80,40 +80,111 @@ impl From<&Comp> for u16 {
     }
 }
 
+mod comp_string_repr {
+    // declare public &str constants for each Comp variant
+    pub const ZERO: &str = "0";
+    pub const ONE: &str = "1";
+    pub const NEG_ONE: &str = "-1";
+    pub const D: &str = "D";
+    pub const A: &str = "A";
+    pub const NOT_D: &str = "!D";
+    pub const NOT_A: &str = "!A";
+    pub const NEG_D: &str = "-D";
+    pub const NEG_A: &str = "-A";
+    pub const D_PLUS_ONE: &str = "D+1";
+    pub const A_PLUS_ONE: &str = "A+1";
+    pub const D_MINUS_ONE: &str = "D-1";
+    pub const A_MINUS_ONE: &str = "A-1";
+    pub const D_PLUS_A: &str = "D+A";
+    pub const D_MINUS_A: &str = "D-A";
+    pub const A_MINUS_D: &str = "A-D";
+    pub const D_AND_A: &str = "D&A";
+    pub const D_OR_A: &str = "D|A";
+    pub const M: &str = "M";
+    pub const NOT_M: &str = "!M";
+    pub const NEG_M: &str = "-M";
+    pub const M_PLUS_ONE: &str = "M+1";
+    pub const M_MINUS_ONE: &str = "M-1";
+    pub const D_PLUS_M: &str = "D+M";
+    pub const D_MINUS_M: &str = "D-M";
+    pub const M_MINUS_D: &str = "M-D";
+    pub const D_AND_M: &str = "D&M";
+    pub const D_OR_M: &str = "D|M";
+}
+
 impl FromStr for Comp {
     type Err = &'static str;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use comp_string_repr::*;
+
         match s {
-            "0" => Ok(Comp::Zero),
-            "1" => Ok(Comp::One),
-            "-1" => Ok(Comp::NegOne),
-            "D" => Ok(Comp::D),
-            "A" => Ok(Comp::A),
-            "!D" => Ok(Comp::NotD),
-            "!A" => Ok(Comp::NotA),
-            "-D" => Ok(Comp::NegD),
-            "-A" => Ok(Comp::NegA),
-            "D+1" => Ok(Comp::DPlusOne),
-            "A+1" => Ok(Comp::APlusOne),
-            "D-1" => Ok(Comp::DMinusOne),
-            "A-1" => Ok(Comp::AMinusOne),
-            "D+A" => Ok(Comp::DPlusA),
-            "D-A" => Ok(Comp::DMinusA),
-            "A-D" => Ok(Comp::AMinusD),
-            "D&A" => Ok(Comp::DAndA),
-            "D|A" => Ok(Comp::DOrA),
-            "M" => Ok(Comp::M),
-            "!M" => Ok(Comp::NotM),
-            "-M" => Ok(Comp::NegM),
-            "M+1" => Ok(Comp::MPlusOne),
-            "M-1" => Ok(Comp::MMinusOne),
-            "D+M" => Ok(Comp::DPlusM),
-            "D-M" => Ok(Comp::DMinusM),
-            "M-D" => Ok(Comp::MMinusD),
-            "D&M" => Ok(Comp::DAndM),
-            "D|M" => Ok(Comp::DOrM),
-            _ => Err("Invalid comp")
+            ZERO => Ok(Comp::Zero),
+            ONE => Ok(Comp::One),
+            NEG_ONE => Ok(Comp::NegOne),
+            D => Ok(Comp::D),
+            A => Ok(Comp::A),
+            NOT_D => Ok(Comp::NotD),
+            NOT_A => Ok(Comp::NotA),
+            NEG_D => Ok(Comp::NegD),
+            NEG_A => Ok(Comp::NegA),
+            D_PLUS_ONE => Ok(Comp::DPlusOne),
+            A_PLUS_ONE => Ok(Comp::APlusOne),
+            D_MINUS_ONE => Ok(Comp::DMinusOne),
+            A_MINUS_ONE => Ok(Comp::AMinusOne),
+            D_PLUS_A => Ok(Comp::DPlusA),
+            D_MINUS_A => Ok(Comp::DMinusA),
+            A_MINUS_D => Ok(Comp::AMinusD),
+            D_AND_A => Ok(Comp::DAndA),
+            D_OR_A => Ok(Comp::DOrA),
+            M => Ok(Comp::M),
+            NOT_M => Ok(Comp::NotM),
+            NEG_M => Ok(Comp::NegM),
+            M_PLUS_ONE => Ok(Comp::MPlusOne),
+            M_MINUS_ONE => Ok(Comp::MMinusOne),
+            D_PLUS_M => Ok(Comp::DPlusM),
+            D_MINUS_M => Ok(Comp::DMinusM),
+            M_MINUS_D => Ok(Comp::MMinusD),
+            D_AND_M => Ok(Comp::DAndM),
+            D_OR_M => Ok(Comp::DOrM),
+            _ => Err("Invalid Comp string"),
+        }
+    }
+}
+
+impl From<&Comp> for &'static str {
+    fn from(value: &Comp) -> &'static str {
+        use comp_string_repr::*;
+
+        match value {
+            Comp::Zero => ZERO,
+            Comp::One => ONE,
+            Comp::NegOne => NEG_ONE,
+            Comp::D => D,
+            Comp::A => A,
+            Comp::NotD => NOT_D,
+            Comp::NotA => NOT_A,
+            Comp::NegD => NEG_D,
+            Comp::NegA => NEG_A,
+            Comp::DPlusOne => D_PLUS_ONE,
+            Comp::APlusOne => A_PLUS_ONE,
+            Comp::DMinusOne => D_MINUS_ONE,
+            Comp::AMinusOne => A_MINUS_ONE,
+            Comp::DPlusA => D_PLUS_A,
+            Comp::DMinusA => D_MINUS_A,
+            Comp::AMinusD => A_MINUS_D,
+            Comp::DAndA => D_AND_A,
+            Comp::DOrA => D_OR_A,
+            Comp::M => M,
+            Comp::NotM => NOT_M,
+            Comp::NegM => NEG_M,
+            Comp::MPlusOne => M_PLUS_ONE,
+            Comp::MMinusOne => M_MINUS_ONE,
+            Comp::DPlusM => D_PLUS_M,
+            Comp::DMinusM => D_MINUS_M,
+            Comp::MMinusD => M_MINUS_D,
+            Comp::DAndM => D_AND_M,
+            Comp::DOrM => D_OR_M,
         }
     }
 }
@@ -135,10 +206,55 @@ pub enum CodeLine {
     }
 }
 
+impl CodeLine {
+    pub fn from_str(line: &str) -> Self {
+        if line.as_bytes()[0] == b'(' {
+            CodeLine::Label(line[1..line.len() - 1].to_string())
+        } else if line.as_bytes()[0] == b'@' {
+            let value = line[1..].parse().map(Address::Value)
+                .unwrap_or_else(|_| Address::Variable(line[1..].to_string().into()));
+            CodeLine::A(value)
+        } else {
+            let mut dest = Dest { a: false, m: false, d: false };
+            let mut jump = Jump::Null;
+            let mut comp = &line[..];
+            if let Some(idx) = line.find('=') {
+                let (d, c) = line.split_at(idx);
+                for c in d.chars() {
+                    match c {
+                        'A' => dest.a = true,
+                        'M' => dest.m = true,
+                        'D' => dest.d = true,
+                        _ => panic!("Invalid dest {}", d)
+                    }
+                }
+                comp = &c[1..];
+            }
+            if let Some(idx) = comp.find(';') {
+                let (c, j) = comp.split_at(idx);
+                comp = c;
+                jump = j[1..].parse().unwrap_or_else(|e| panic!("Invalid jump {}: {:?}", j, e));
+            }
+            let comp = comp.parse().unwrap_or_else(|e| panic!("Invalid comp {}: {:?}", comp, e));
+            CodeLine::C {
+                comp,
+                dest,
+                jump,
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct PredefinedSymbol {
     pub name: &'static str,
     pub value: u16,
+}
+
+impl From<PredefinedSymbol> for CodeLine {
+    fn from(value: PredefinedSymbol) -> CodeLine {
+        CodeLine::A(Address::Variable(value.name.into()))
+    }
 }
 
 pub mod predefined_symbols {

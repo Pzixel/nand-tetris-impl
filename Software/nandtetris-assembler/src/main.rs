@@ -91,7 +91,7 @@ impl Context {
                 }
             })
             .filter(|x| !x.is_empty())
-            .map(|x| Self::parse_line(x))
+            .map(CodeLine::from_str)
 
             .collect::<Vec<_>>()
             ;
@@ -123,43 +123,6 @@ impl Context {
             }
         }).collect()
 
-    }
-
-    fn parse_line(line: &str) -> CodeLine {
-        if line.as_bytes()[0] == b'(' {
-            CodeLine::Label(line[1..line.len() - 1].to_string())
-        } else if line.as_bytes()[0] == b'@' {
-            let value = line[1..].parse().map(Address::Value)
-                .unwrap_or_else(|_| Address::Variable(line[1..].to_string().into()));
-            CodeLine::A(value)
-        } else {
-            let mut dest = Dest { a: false, m: false, d: false };
-            let mut jump = Jump::Null;
-            let mut comp = &line[..];
-            if let Some(idx) = line.find('=') {
-                let (d, c) = line.split_at(idx);
-                for c in d.chars() {
-                    match c {
-                        'A' => dest.a = true,
-                        'M' => dest.m = true,
-                        'D' => dest.d = true,
-                        _ => panic!("Invalid dest {}", d)
-                    }
-                }
-                comp = &c[1..];
-            }
-            if let Some(idx) = comp.find(';') {
-                let (c, j) = comp.split_at(idx);
-                comp = c;
-                jump = j[1..].parse().unwrap_or_else(|e| panic!("Invalid jump {}: {:?}", j, e));
-            }
-            let comp = comp.parse().unwrap_or_else(|e| panic!("Invalid comp {}: {:?}", comp, e));
-            CodeLine::C {
-                comp,
-                dest,
-                jump,
-            }
-        }
     }
 }
 
