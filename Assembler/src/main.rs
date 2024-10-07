@@ -9,7 +9,7 @@ struct Dest {
 
 impl From<&Dest> for u16 {
     fn from(value: &Dest) -> u16 {
-        u16::from(value.a as u8) << 2 | u16::from(value.m as u8) << 1 | u16::from(value.d as u8)
+        u16::from(value.a as u8) << 2 | u16::from(value.d as u8) << 1 | u16::from(value.m as u8)
     }
 }
 
@@ -186,5 +186,36 @@ fn main() {
     let instructions = assemble(&file);
     for instruction in instructions {
         println!("{}", instruction);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+
+    macro_rules! get_test_files {
+        ($name:literal) => {
+            (
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    concat!("/assets/", $name, ".asm")
+                )),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    concat!("/assets/", $name, ".hack")
+                ))
+            )
+        };
+    }
+
+    #[test]
+    fn add() {
+        let (input, expected) = get_test_files!("Add");
+        let expected = expected.lines().collect::<Vec<_>>();
+
+        let instructions = assemble(input);
+        let instructions = instructions.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+        assert_eq!(instructions, expected);
     }
 }
