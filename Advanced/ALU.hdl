@@ -54,5 +54,9 @@ CHIP ALU {
     Mux16(a=and , b=sum , sel=f , out=result );
     Not16(in=result , out=notResult );
 
-    Mux16(a=result , b=notResult , sel=no , out=out );
+    Mux16(a=result , b=notResult , sel=no , out=out,out[15]=ng,out[0..7]=hf1, out[8..15]=hf2 );
+    Or8Way(in=hf1 , out=hf1Set );
+    Or8Way(in=hf2 , out=hf2Set );
+    Or(a=hf1Set , b=hf2Set , out=someBitsSet );
+    Not(in=someBitsSet, out=zr );
 }
