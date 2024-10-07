@@ -1,7 +1,7 @@
 use core::fmt;
-use std::{env, fmt::Display, str::FromStr};
+use std::{env, fmt::Display};
 use std::io::Write;
-use nandtetris_shared::assembler::{Comp, Dest, Jump, CodeLine, Address};
+use nandtetris_shared::assembler::{Address, CodeLine, Comp, Dest, Jump, PREDEFINED_SYMBOLS};
 
 #[derive(Debug)]
 enum Command {
@@ -61,32 +61,8 @@ impl SymbolTable {
 
 impl Default for SymbolTable {
     fn default() -> Self {
-        let mut symbols = std::collections::HashMap::new();
-        symbols.insert("SP".to_string(), 0);
-        symbols.insert("LCL".to_string(), 1);
-        symbols.insert("ARG".to_string(), 2);
-        symbols.insert("THIS".to_string(), 3);
-        symbols.insert("THAT".to_string(), 4);
-        symbols.insert("R0".to_string(), 0);
-        symbols.insert("R1".to_string(), 1);
-        symbols.insert("R2".to_string(), 2);
-        symbols.insert("R3".to_string(), 3);
-        symbols.insert("R4".to_string(), 4);
-        symbols.insert("R5".to_string(), 5);
-        symbols.insert("R6".to_string(), 6);
-        symbols.insert("R7".to_string(), 7);
-        symbols.insert("R8".to_string(), 8);
-        symbols.insert("R9".to_string(), 9);
-        symbols.insert("R10".to_string(), 10);
-        symbols.insert("R11".to_string(), 11);
-        symbols.insert("R12".to_string(), 12);
-        symbols.insert("R13".to_string(), 13);
-        symbols.insert("R14".to_string(), 14);
-        symbols.insert("R15".to_string(), 15);
-        symbols.insert("SCREEN".to_string(), 0x4000);
-        symbols.insert("KBD".to_string(), 0x6000);
         SymbolTable {
-            symbols,
+            symbols: PREDEFINED_SYMBOLS.iter().map(|x| (x.name.into(), x.value)).collect(),
             next_address: 16,
         }
     }

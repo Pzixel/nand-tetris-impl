@@ -1,6 +1,7 @@
 use core::fmt;
 use std::{env, fmt::Display, str::FromStr};
 use std::io::Write;
+use nandtetris_shared::assembler;
 
 #[derive(Debug, Default)]
 struct Context {
@@ -8,7 +9,10 @@ struct Context {
 
 impl Context {
     pub fn translate(&self, code: &str) -> Vec<String> {
-        todo!()
+        let instructions = self.parse(code);
+        let assembler = instructions.into_iter().flat_map(Self::translate_instruction);
+        let output = assembler.map(|x| x.to_string()).collect::<Vec<_>>();
+        output
     }
 
     pub fn parse(&self, code: &str) -> Vec<VmInstruction> {
@@ -42,6 +46,29 @@ impl Context {
             _ => panic!("Invalid command {}", command),
         }
     }
+
+    fn translate_instruction(instruction: VmInstruction) -> Vec<assembler::CodeLine> {
+        match instruction {
+            VmInstruction::Push { segment, index } => {
+                match segment {
+                    Segment::Constant => {
+                        vec![
+                            assembler::CodeLine::A(assembler::Address::Value(index)),
+                            assembler::CodeLine::C {
+                                dest: assembler::Dest::D,
+                                comp: assembler::Comp::A,
+                                jump: assembler::Jump::Null,
+                            },
+                            assembler::CodeLine::A(assembler::Address::Variable()),
+                        ]
+                    }
+                }
+            }
+            VmInstruction::Add => {
+                todo!();
+            }
+        }
+    }
 }
 
 enum VmInstruction {
@@ -52,18 +79,7 @@ enum VmInstruction {
     Add,
 }
 
-impl Display for VmInstruction {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            VmInstruction::Push { segment, index } => match segment {
-                Segment::Constant => translate_push_constant(*index, f),
-            },
-            VmInstruction::Add => translate_add(f),
-        }
-    }
-}
-
-fn translate_push_constant(index: u16, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+fn translate_push_constant(index: u16) {
     writeln!(f, "@{}", index)?;
     writeln!(f, "D=A")?;
     writeln!(f, "@SP")?;
@@ -74,7 +90,7 @@ fn translate_push_constant(index: u16, f: &mut std::fmt::Formatter<'_>) -> Resul
     Ok(())
 }
 
-fn translate_add(f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+fn translate_add() {
     todo!()
 }
 

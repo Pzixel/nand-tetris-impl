@@ -7,6 +7,12 @@ pub struct Dest {
     pub d: bool,
 }
 
+impl Dest {
+    pub const A: Dest = Dest { a: true, m: false, d: false };
+    pub const M: Dest = Dest { a: false, m: true, d: false };
+    pub const D: Dest = Dest { a: false, m: false, d: true };
+}
+
 impl From<&Dest> for u16 {
     fn from(value: &Dest) -> u16 {
         u16::from(value.a as u8) << 2 | u16::from(value.d as u8) << 1 | u16::from(value.m as u8)
@@ -128,3 +134,63 @@ pub enum CodeLine {
         jump: Jump,
     }
 }
+
+#[derive(Debug, Clone, Copy)]
+pub struct PredefinedSymbol {
+    pub name: &'static str,
+    pub value: u16,
+}
+
+pub mod predefined_symbols {
+    use super::PredefinedSymbol;
+
+    pub const SP: PredefinedSymbol = PredefinedSymbol { name: stringify!(SP), value: 0 };
+    pub const LCL: PredefinedSymbol = PredefinedSymbol { name: stringify!(LCL), value: 1 };
+    pub const ARG: PredefinedSymbol = PredefinedSymbol { name: stringify!(ARG), value: 2 };
+    pub const THIS: PredefinedSymbol = PredefinedSymbol { name: stringify!(THIS), value: 3 };
+    pub const THAT: PredefinedSymbol = PredefinedSymbol { name: stringify!(THAT), value: 4 };
+    pub const R0: PredefinedSymbol = PredefinedSymbol { name: stringify!(R0), value: 0 };
+    pub const R1: PredefinedSymbol = PredefinedSymbol { name: stringify!(R1), value: 1 };
+    pub const R2: PredefinedSymbol = PredefinedSymbol { name: stringify!(R2), value: 2 };
+    pub const R3: PredefinedSymbol = PredefinedSymbol { name: stringify!(R3), value: 3 };
+    pub const R4: PredefinedSymbol = PredefinedSymbol { name: stringify!(R4), value: 4 };
+    pub const R5: PredefinedSymbol = PredefinedSymbol { name: stringify!(R5), value: 5 };
+    pub const R6: PredefinedSymbol = PredefinedSymbol { name: stringify!(R6), value: 6 };
+    pub const R7: PredefinedSymbol = PredefinedSymbol { name: stringify!(R7), value: 7 };
+    pub const R8: PredefinedSymbol = PredefinedSymbol { name: stringify!(R8), value: 8 };
+    pub const R9: PredefinedSymbol = PredefinedSymbol { name: stringify!(R9), value: 9 };
+    pub const R10: PredefinedSymbol = PredefinedSymbol { name: stringify!(R10), value: 10 };
+    pub const R11: PredefinedSymbol = PredefinedSymbol { name: stringify!(R11), value: 11 };
+    pub const R12: PredefinedSymbol = PredefinedSymbol { name: stringify!(R12), value: 12 };
+    pub const R13: PredefinedSymbol = PredefinedSymbol { name: stringify!(R13), value: 13 };
+    pub const R14: PredefinedSymbol = PredefinedSymbol { name: stringify!(R14), value: 14 };
+    pub const R15: PredefinedSymbol = PredefinedSymbol { name: stringify!(R15), value: 15 };
+    pub const SCREEN: PredefinedSymbol = PredefinedSymbol { name: stringify!(SCREEN), value: 16384 };
+    pub const KBD: PredefinedSymbol = PredefinedSymbol { name: stringify!(KBD), value: 24576 };
+}
+
+pub const PREDEFINED_SYMBOLS: &[PredefinedSymbol] = &[
+    predefined_symbols::SP,
+    predefined_symbols::LCL,
+    predefined_symbols::ARG,
+    predefined_symbols::THIS,
+    predefined_symbols::THAT,
+    predefined_symbols::R0,
+    predefined_symbols::R1,
+    predefined_symbols::R2,
+    predefined_symbols::R3,
+    predefined_symbols::R4,
+    predefined_symbols::R5,
+    predefined_symbols::R6,
+    predefined_symbols::R7,
+    predefined_symbols::R8,
+    predefined_symbols::R9,
+    predefined_symbols::R10,
+    predefined_symbols::R11,
+    predefined_symbols::R12,
+    predefined_symbols::R13,
+    predefined_symbols::R14,
+    predefined_symbols::R15,
+    predefined_symbols::SCREEN,
+    predefined_symbols::KBD,
+];
