@@ -1,5 +1,5 @@
 use core::fmt;
-use std::{env, fmt::Display};
+use std::{env, fmt::Display, str::FromStr};
 
 struct Dest {
     a: bool,
@@ -32,38 +32,84 @@ impl From<&Jump> for u16 {
     }
 }
 
-struct Comp(u16);
+#[repr(u16)]
+#[derive(Debug, Clone, Copy)]
+enum Comp {
+    // a=0
+    Zero = 0b0101010,
+    One = 0b0111111,
+    NegOne = 0b0111010,
+    D = 0b0001100,
+    A = 0b0110000,
+    NotD = 0b0001101,
+    NotA = 0b0110001,
+    NegD = 0b0001111,
+    NegA = 0b0110011,
+    DPlusOne = 0b0011111,
+    APlusOne = 0b0110111,
+    DMinusOne = 0b0001110,
+    AMinusOne = 0b0110010,
+    DPlusA = 0b0000010,
+    DMinusA = 0b0010011,
+    AMinusD = 0b0000111,
+    DAndA = 0b0000000,
+    DOrA = 0b0010101,
 
-impl Comp {
-    const ZERO: Comp = Comp(0b0101010);
-    const ONE: Comp = Comp(0b0111111);
-    const NEG_ONE: Comp = Comp(0b0111010);
-    const D: Comp = Comp(0b0001100);
-    const A: Comp = Comp(0b0110000);
-    const NOT_D: Comp = Comp(0b0001101);
-    const NOT_A: Comp = Comp(0b0110001);
-    const NEG_D: Comp = Comp(0b0001111);
-    const NEG_A: Comp = Comp(0b0110011);
-    const D_PLUS_ONE: Comp = Comp(0b0011111);
-    const A_PLUS_ONE: Comp = Comp(0b0110111);
-    const D_MINUS_ONE: Comp = Comp(0b0001110);
-    const A_MINUS_ONE: Comp = Comp(0b0110010);
-    const D_PLUS_A: Comp = Comp(0b0000010);
-    const D_MINUS_A: Comp = Comp(0b0010011);
-    const A_MINUS_D: Comp = Comp(0b0000111);
-    const D_AND_A: Comp = Comp(0b0000000);
-    const D_OR_A: Comp = Comp(0b0010101);
+    // a=1
+    M = 0b1110000,
+    NotM = 0b1110001,
+    NegM = 0b1110011,
+    MPlusOne = 0b1110111,
+    MMinusOne = 0b1110010,
+    DPlusM = 0b1000010,
+    DMinusM = 0b1010011,
+    MMinusD = 0b1000111,
+    DAndM = 0b1000000,
+    DOrM = 0b1010101,
+}
 
-    const M: Comp = Comp(0b1110000);
-    const NOT_M: Comp = Comp(0b1110001);
-    const NEG_M: Comp = Comp(0b1110011);
-    const M_PLUS_ONE: Comp = Comp(0b1110111);
-    const M_MINUS_ONE: Comp = Comp(0b1110010);
-    const D_PLUS_M: Comp = Comp(0b1000010);
-    const D_MINUS_M: Comp = Comp(0b1010011);
-    const M_MINUS_D: Comp = Comp(0b1000111);
-    const D_AND_M: Comp = Comp(0b1000000);
-    const D_OR_M: Comp = Comp(0b1010101);
+impl From<&Comp> for u16 {
+    fn from(value: &Comp) -> u16 {
+        *value as u16
+    }
+}
+
+impl FromStr for Comp {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "0" => Ok(Comp::Zero),
+            "1" => Ok(Comp::One),
+            "-1" => Ok(Comp::NegOne),
+            "D" => Ok(Comp::D),
+            "A" => Ok(Comp::A),
+            "!D" => Ok(Comp::NotD),
+            "!A" => Ok(Comp::NotA),
+            "-D" => Ok(Comp::NegD),
+            "-A" => Ok(Comp::NegA),
+            "D+1" => Ok(Comp::DPlusOne),
+            "A+1" => Ok(Comp::APlusOne),
+            "D-1" => Ok(Comp::DMinusOne),
+            "A-1" => Ok(Comp::AMinusOne),
+            "D+A" => Ok(Comp::DPlusA),
+            "D-A" => Ok(Comp::DMinusA),
+            "A-D" => Ok(Comp::AMinusD),
+            "D&A" => Ok(Comp::DAndA),
+            "D|A" => Ok(Comp::DOrA),
+            "M" => Ok(Comp::M),
+            "!M" => Ok(Comp::NotM),
+            "-M" => Ok(Comp::NegM),
+            "M+1" => Ok(Comp::MPlusOne),
+            "M-1" => Ok(Comp::MMinusOne),
+            "D+M" => Ok(Comp::DPlusM),
+            "D-M" => Ok(Comp::DMinusM),
+            "M-D" => Ok(Comp::MMinusD),
+            "D&M" => Ok(Comp::DAndM),
+            "D|M" => Ok(Comp::DOrM),
+            _ => Err("Invalid comp")
+        }
+    }
 }
 
 enum Command {
@@ -89,7 +135,7 @@ impl From<&Command> for Instruction {
             Command::A(val) => Instruction(*val),
             Command::C { comp, dest, jump } => {
                 let mut instruction = 0b111;
-                instruction = instruction << 7 | comp.0;
+                instruction = instruction << 7 | u16::from(comp);
                 instruction = instruction << 3 | u16::from(dest);
                 instruction = instruction << 3 | u16::from(jump);
                 Instruction(instruction)
@@ -141,37 +187,7 @@ fn parse_line(line: &str) -> Command {
             comp = c;
             jump = j[1..].parse().unwrap_or_else(|e| panic!("Invalid jump {}: {:?}", j, e));
         }
-        let comp = match comp {
-            "0" => Comp::ZERO,
-            "1" => Comp::ONE,
-            "-1" => Comp::NEG_ONE,
-            "D" => Comp::D,
-            "A" => Comp::A,
-            "!D" => Comp::NOT_D,
-            "!A" => Comp::NOT_A,
-            "-D" => Comp::NEG_D,
-            "-A" => Comp::NEG_A,
-            "D+1" => Comp::D_PLUS_ONE,
-            "A+1" => Comp::A_PLUS_ONE,
-            "D-1" => Comp::D_MINUS_ONE,
-            "A-1" => Comp::A_MINUS_ONE,
-            "D+A" => Comp::D_PLUS_A,
-            "D-A" => Comp::D_MINUS_A,
-            "A-D" => Comp::A_MINUS_D,
-            "D&A" => Comp::D_AND_A,
-            "D|A" => Comp::D_OR_A,
-            "M" => Comp::M,
-            "!M" => Comp::NOT_M,
-            "-M" => Comp::NEG_M,
-            "M+1" => Comp::M_PLUS_ONE,
-            "M-1" => Comp::M_MINUS_ONE,
-            "D+M" => Comp::D_PLUS_M,
-            "D-M" => Comp::D_MINUS_M,
-            "M-D" => Comp::M_MINUS_D,
-            "D&M" => Comp::D_AND_M,
-            "D|M" => Comp::D_OR_M,
-            _ => panic!("Invalid comp {}", comp)
-        };
+        let comp = comp.parse().unwrap_or_else(|e| panic!("Invalid comp {}: {:?}", comp, e));
         Command::C {
             comp,
             dest,
