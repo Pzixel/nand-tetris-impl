@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{borrow::Cow, str::FromStr};
 
 #[derive(Debug)]
 pub struct Dest {
@@ -121,7 +121,7 @@ impl FromStr for Comp {
 #[derive(Debug)]
 pub enum Address {
     Value(u16),
-    Variable(String),
+    Variable(Cow<'static, str>),
 }
 
 #[derive(Debug)]

@@ -1,4 +1,5 @@
 use core::fmt;
+use std::borrow::Cow;
 use std::{env, fmt::Display};
 use std::io::Write;
 use nandtetris_shared::assembler::{Address, CodeLine, Comp, Dest, Jump, PREDEFINED_SYMBOLS};
@@ -38,12 +39,12 @@ impl From<&Command> for Instruction {
 
 #[derive(Debug)]
 struct SymbolTable {
-    symbols: std::collections::HashMap<String, u16>,
+    symbols: std::collections::HashMap<Cow<'static, str>, u16>,
     next_address: u16,
 }
 
 impl SymbolTable {
-    fn get_or_insert(&mut self, variable: String) -> u16 {
+    fn get_or_insert(&mut self, variable: Cow<'static, str>) -> u16 {
         *self.symbols.entry(variable).or_insert_with(|| {
             let address = self.next_address;
             self.next_address += 1;
@@ -51,7 +52,7 @@ impl SymbolTable {
         })
     }
 
-    fn insert(&mut self, symbol: String, address: u16) {
+    fn insert(&mut self, symbol: Cow<'static, str>, address: u16) {
         // dbg!(&self, &symbol, &address);
         if let Some(x) = self.symbols.insert(symbol.clone(), address) {
             panic!("Symbol {} already exists with address {}", symbol, x);
@@ -98,7 +99,7 @@ impl Context {
         for line in code_lines.iter_mut() {
             match line {
                 CodeLine::Label(ref mut label) => {
-                    self.symbol_table.insert(std::mem::take(label), line_number as u16);
+                    self.symbol_table.insert(std::mem::take(label).into(), line_number as u16);
                 }
                 _ => {
                     line_number += 1;
@@ -129,7 +130,7 @@ impl Context {
             CodeLine::Label(line[1..line.len() - 1].to_string())
         } else if line.as_bytes()[0] == b'@' {
             let value = line[1..].parse().map(Address::Value)
-                .unwrap_or_else(|_| Address::Variable(line[1..].to_string()));
+                .unwrap_or_else(|_| Address::Variable(line[1..].to_string().into()));
             CodeLine::A(value)
         } else {
             let mut dest = Dest { a: false, m: false, d: false };

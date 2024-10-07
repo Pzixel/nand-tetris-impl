@@ -48,18 +48,20 @@ impl Context {
     }
 
     fn translate_instruction(instruction: VmInstruction) -> Vec<assembler::CodeLine> {
+        use assembler::*;
+
         match instruction {
             VmInstruction::Push { segment, index } => {
                 match segment {
                     Segment::Constant => {
                         vec![
-                            assembler::CodeLine::A(assembler::Address::Value(index)),
-                            assembler::CodeLine::C {
-                                dest: assembler::Dest::D,
-                                comp: assembler::Comp::A,
-                                jump: assembler::Jump::Null,
+                            CodeLine::A(Address::Value(index)),
+                            CodeLine::C {
+                                dest: Dest::D,
+                                comp: Comp::A,
+                                jump: Jump::Null,
                             },
-                            assembler::CodeLine::A(assembler::Address::Variable()),
+                            CodeLine::A(Address::Variable(predefined_symbols::SP.name.into())),
                         ]
                     }
                 }
@@ -79,20 +81,20 @@ enum VmInstruction {
     Add,
 }
 
-fn translate_push_constant(index: u16) {
-    writeln!(f, "@{}", index)?;
-    writeln!(f, "D=A")?;
-    writeln!(f, "@SP")?;
-    writeln!(f, "A=M")?;
-    writeln!(f, "M=D")?;
-    writeln!(f, "@SP")?;
-    writeln!(f, "M=M+1")?;
-    Ok(())
-}
+// fn translate_push_constant(index: u16) {
+//     writeln!(f, "@{}", index)?;
+//     writeln!(f, "D=A")?;
+//     writeln!(f, "@SP")?;
+//     writeln!(f, "A=M")?;
+//     writeln!(f, "M=D")?;
+//     writeln!(f, "@SP")?;
+//     writeln!(f, "M=M+1")?;
+//     Ok(())
+// }
 
-fn translate_add() {
-    todo!()
-}
+// fn translate_add() {
+//     todo!()
+// }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, derive_more::FromStr)]
