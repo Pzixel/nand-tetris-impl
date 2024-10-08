@@ -43,9 +43,16 @@ impl Context {
             "push" => {
                 let segment = parts.next().expect("No segment found");
                 let index = parts.next().expect("No index found");
-                let segment = Segment::from_str(segment).expect("Invalid segment");
+                let segment = Segment::get_from_str(segment);
                 let index = index.parse().expect("Invalid index");
                 VmInstruction::Push { segment, index }
+            },
+            "pop" => {
+                let segment = parts.next().expect("No segment found");
+                let index = parts.next().expect("No index found");
+                let segment = Segment::get_from_str(segment);
+                let index = index.parse().expect("Invalid index");
+                VmInstruction::Pop { segment, index }
             }
             "add" => VmInstruction::Add,
             "sub" => VmInstruction::Sub,
@@ -74,7 +81,36 @@ impl Context {
                         ]);
                         vec.extend(push(Comp::D));
                         vec
+                    },
+                    _ => todo!(),
+                }
+            }
+            VmInstruction::Pop { segment, index } => {
+                match segment {
+                    Segment::Constant => panic!("Cannot pop to constant"),
+                    Segment::Local => {
+                        vec![
+                            // SP--
+                            predefined_symbols::SP.into(),
+                            CodeLine::assign(Dest::M, Comp::MMinusOne),
+                            // R13 = LCL + index
+                            CodeLine::constant(index),
+                            CodeLine::assign(Dest::D, Comp::A),
+                            predefined_symbols::LCL.into(),
+                            CodeLine::assign(Dest::A, Comp::M),
+                            CodeLine::assign(Dest::AD, Comp::DPlusA),
+                            predefined_symbols::R13.into(),
+                            CodeLine::assign(Dest::M, Comp::D),
+                            // *R13 = *SP
+                            predefined_symbols::SP.into(),
+                            CodeLine::assign(Dest::A, Comp::M),
+                            CodeLine::assign(Dest::D, Comp::M),
+                            predefined_symbols::R13.into(),
+                            CodeLine::assign(Dest::A, Comp::M),
+                            CodeLine::assign(Dest::M, Comp::D),
+                        ]
                     }
+                    _ => todo!(),
                 }
             }
             VmInstruction::Add => {
@@ -185,6 +221,10 @@ enum VmInstruction {
         segment: Segment,
         index: u16,
     },
+    Pop {
+        segment: Segment,
+        index: u16,
+    },
     Add,
     Eq,
     Lt,
@@ -200,4 +240,19 @@ enum VmInstruction {
 #[derive(Debug, Clone, Copy, derive_more::FromStr)]
 enum Segment {
     Constant,
+    Local,
+    Argument,
+    Static,
+    This,
+    That,
+    Temp,
+}
+
+impl Segment {
+    fn get_from_str(s: &str) -> Self {
+        match FromStr::from_str(s) {
+            Ok(x) => x,
+            Err(e) => panic!("Invalid segment: {}: {:?}", s, e),
+        }
+    }
 }

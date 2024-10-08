@@ -60,4 +60,9 @@ mod tests {
     fn test_stack_test() {
         test_program!("StackTest");
     }
+
+    #[test]
+    fn test_basic_test() {
+        test_program!("BasicTest");
+    }
 }

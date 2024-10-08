@@ -11,6 +11,8 @@ impl Dest {
     pub const A: Dest = Dest { a: true, m: false, d: false };
     pub const M: Dest = Dest { a: false, m: true, d: false };
     pub const D: Dest = Dest { a: false, m: false, d: true };
+
+    pub const AD: Dest = Dest { a: true, m: false, d: true };
 }
 
 impl From<&Dest> for u16 {
