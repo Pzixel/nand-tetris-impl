@@ -1,15 +1,22 @@
 use std::{env, str::FromStr};
 use std::io::Write;
-use nandtetris_shared::assembler;
+use nandtetris_shared::assembler::{self, CodeLine};
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct Context {
+    label_index: u16,
+}
+
+impl Default for Context {
+    fn default() -> Self {
+        Self { label_index: 1 }
+    }
 }
 
 impl Context {
-    pub fn translate(&self, code: &str) -> Vec<String> {
+    pub fn translate(&mut self, code: &str) -> Vec<String> {
         let instructions = self.parse(code);
-        let assembler = instructions.into_iter().flat_map(Self::translate_instruction);
+        let assembler = instructions.into_iter().flat_map(|x| self.translate_instruction(x));
         let output = assembler.map(|x| x.to_string()).collect::<Vec<_>>();
         output
     }
@@ -42,11 +49,19 @@ impl Context {
                 VmInstruction::Push { segment, index }
             }
             "add" => VmInstruction::Add,
-            _ => panic!("Invalid command {}", command),
+            "sub" => VmInstruction::Sub,
+            "neg" => VmInstruction::Neg,
+            "eq" => VmInstruction::Eq,
+            "gt" => VmInstruction::Gt,
+            "lt" => VmInstruction::Lt,
+            "and" => VmInstruction::And,
+            "or" => VmInstruction::Or,
+            "not" => VmInstruction::Not,
+            _ => panic!("Invalid command: {}", command),
         }
     }
 
-    fn translate_instruction(instruction: VmInstruction) -> Vec<assembler::CodeLine> {
+    fn translate_instruction(&mut self, instruction: VmInstruction) -> Vec<assembler::CodeLine> {
         use assembler::*;
 
         match instruction {
@@ -62,28 +77,73 @@ impl Context {
                                 jump: Jump::Null,
                             },
                         ]);
-                        vec.extend(push());
+                        vec.extend(push(Comp::D));
                         vec
                     }
                 }
             }
             VmInstruction::Add => {
-                let mut vec = Vec::with_capacity(12);
+                arithmetic(Comp::DPlusA)
+            }
+            VmInstruction::Sub => {
+                arithmetic(Comp::AMinusD)
+            }
+            VmInstruction::Neg => {
+                let mut vec = Vec::with_capacity(7);
                 vec.extend(pop(Dest::D));
-                vec.extend(pop(Dest::A));
                 vec.push(CodeLine::C {
                     dest: Dest::D,
-                    comp: Comp::DPlusA,
+                    comp: Comp::NegD,
                     jump: Jump::Null,
                 });
-                vec.extend(push());
+                vec.extend(push(Comp::D));
+                vec
+            }
+            VmInstruction::Eq => {
+                comparison(Jump::JEQ, &mut self.label_index)
+            }
+            VmInstruction::Gt => {
+                comparison(Jump::JGT, &mut self.label_index)
+            }
+            VmInstruction::Lt => {
+                comparison(Jump::JLT, &mut self.label_index)
+            }
+            VmInstruction::And => {
+                arithmetic(Comp::DAndA)
+            }
+            VmInstruction::Or => {
+                arithmetic(Comp::DOrA)
+            }
+            VmInstruction::Not => {
+                let mut vec = Vec::with_capacity(7);
+                vec.extend(pop(Dest::D));
+                vec.push(CodeLine::C {
+                    dest: Dest::D,
+                    comp: Comp::NotD,
+                    jump: Jump::Null,
+                });
+                vec.extend(push(Comp::D));
                 vec
             }
         }
     }
 }
 
-fn push() -> [assembler::CodeLine; 5] {
+fn arithmetic(comp: assembler::Comp) -> Vec<assembler::CodeLine> {
+    use assembler::*;
+    let mut vec = Vec::with_capacity(12);
+    vec.extend(pop(Dest::D));
+    vec.extend(pop(Dest::A));
+    vec.push(CodeLine::C {
+        dest: Dest::D,
+        comp,
+        jump: Jump::Null,
+    });
+    vec.extend(push(Comp::D));
+    vec
+}
+
+fn push(comp: assembler::Comp) -> [assembler::CodeLine; 5] {
     use assembler::*;
     [
         predefined_symbols::SP.into(),
@@ -94,7 +154,7 @@ fn push() -> [assembler::CodeLine; 5] {
         },
         CodeLine::C {
             dest: Dest::M,
-            comp: Comp::D,
+            comp,
             jump: Jump::Null,
         },
         predefined_symbols::SP.into(),
@@ -129,28 +189,82 @@ fn pop(dest: assembler::Dest) -> [assembler::CodeLine; 5] {
     ]
 }
 
+fn comparison(jump: assembler::Jump, label_index: &mut u16) -> Vec<CodeLine> {
+    use assembler::*;
+
+    let mut vec = Vec::with_capacity(25);
+    vec.extend(pop(Dest::D));
+    vec.extend(pop(Dest::A));
+    let label1 = format!("LABEL{}", *label_index);
+    let label2 = format!("LABEL{}", *label_index + 1);
+    *label_index += 2;
+    vec.extend([
+        CodeLine::C {
+            dest: Dest::D,
+            comp: Comp::AMinusD,
+            jump: Jump::Null,
+        },
+        CodeLine::A(Address::Variable(label1.clone().into())),
+        CodeLine::C {
+            dest: Dest::default(),
+            comp: Comp::D,
+            jump,
+        },
+        predefined_symbols::SP.into(),
+        CodeLine::C {
+            dest: Dest::A,
+            comp: Comp::M,
+            jump: Jump::Null,
+        },
+        CodeLine::C {
+            dest: Dest::M,
+            comp: Comp::Zero,
+            jump: Jump::Null,
+        },
+        CodeLine::A(Address::Variable(label2.clone().into())),
+        CodeLine::C {
+            dest: Dest::default(),
+            comp: Comp::Zero,
+            jump: Jump::JMP,
+        },
+        CodeLine::Label(label1.into()),
+        predefined_symbols::SP.into(),
+        CodeLine::C {
+            dest: Dest::A,
+            comp: Comp::M,
+            jump: Jump::Null,
+        },
+        CodeLine::C {
+            dest: Dest::M,
+            comp: Comp::NegOne,
+            jump: Jump::Null,
+        },
+        CodeLine::Label(label2.into()),
+        predefined_symbols::SP.into(),
+        CodeLine::C {
+            dest: Dest::M,
+            comp: Comp::MPlusOne,
+            jump: Jump::Null,
+        },
+    ]);
+    vec
+}
+
 enum VmInstruction {
     Push {
         segment: Segment,
         index: u16,
     },
     Add,
+    Eq,
+    Lt,
+    Gt,
+    Sub,
+    Neg,
+    And,
+    Or,
+    Not,
 }
-
-// fn translate_push_constant(index: u16) {
-//     writeln!(f, "@{}", index)?;
-//     writeln!(f, "D=A")?;
-//     writeln!(f, "@SP")?;
-//     writeln!(f, "A=M")?;
-//     writeln!(f, "M=D")?;
-//     writeln!(f, "@SP")?;
-//     writeln!(f, "M=M+1")?;
-//     Ok(())
-// }
-
-// fn translate_add() {
-//     todo!()
-// }
 
 #[repr(u16)]
 #[derive(Debug, Clone, Copy, derive_more::FromStr)]
@@ -205,7 +319,12 @@ mod tests {
     }
 
     #[test]
-    fn test_push_constant() {
+    fn test_simple_add() {
         test_program!("SimpleAdd");
+    }
+
+    #[test]
+    fn test_stack_test() {
+        test_program!("StackTest");
     }
 }

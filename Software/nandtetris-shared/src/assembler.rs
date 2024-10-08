@@ -1,6 +1,6 @@
 use std::{borrow::Cow, str::FromStr};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Dest {
     pub a: bool,
     pub m: bool,
