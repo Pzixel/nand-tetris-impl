@@ -247,7 +247,7 @@ pub enum CodeLine {
 }
 
 impl CodeLine {
-    pub fn command(dest: Dest, comp: Comp) -> Self {
+    pub fn assign(dest: Dest, comp: Comp) -> Self {
         CodeLine::C {
             dest,
             comp,
@@ -255,12 +255,18 @@ impl CodeLine {
         }
     }
 
-    pub fn command_full(dest: Dest, comp: Comp, jump: Jump) -> Self {
+    /// Conditional jump
+    pub fn test(dest: Dest, comp: Comp, jump: Jump) -> Self {
         CodeLine::C {
             dest,
             comp,
             jump,
         }
+    }
+
+    /// Unconditional jump
+    pub fn goto() -> Self {
+        CodeLine::test(Dest::default(), Comp::Zero, Jump::JMP)
     }
 
     pub fn constant(value: u16) -> Self {

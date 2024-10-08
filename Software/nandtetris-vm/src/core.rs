@@ -70,7 +70,7 @@ impl Context {
                         let mut vec = Vec::with_capacity(7);
                         vec.extend([
                             CodeLine::constant(index),
-                            CodeLine::command(Dest::D, Comp::A),
+                            CodeLine::assign(Dest::D, Comp::A),
                         ]);
                         vec.extend(push(Comp::D));
                         vec
@@ -78,17 +78,13 @@ impl Context {
                 }
             }
             VmInstruction::Add => {
-                arithmetic(Comp::DPlusA)
+                binary(Comp::DPlusA)
             }
             VmInstruction::Sub => {
-                arithmetic(Comp::AMinusD)
+                binary(Comp::AMinusD)
             }
             VmInstruction::Neg => {
-                let mut vec = Vec::with_capacity(7);
-                vec.extend(pop(Dest::D));
-                vec.push(CodeLine::command(Dest::D, Comp::NegD));
-                vec.extend(push(Comp::D));
-                vec
+                unary(Comp::NegD)
             }
             VmInstruction::Eq => {
                 comparison(Jump::JEQ, &mut self.label_index)
@@ -100,28 +96,33 @@ impl Context {
                 comparison(Jump::JLT, &mut self.label_index)
             }
             VmInstruction::And => {
-                arithmetic(Comp::DAndA)
+                binary(Comp::DAndA)
             }
             VmInstruction::Or => {
-                arithmetic(Comp::DOrA)
+                binary(Comp::DOrA)
             }
             VmInstruction::Not => {
-                let mut vec = Vec::with_capacity(7);
-                vec.extend(pop(Dest::D));
-                vec.push(CodeLine::command(Dest::D, Comp::NotD));
-                vec.extend(push(Comp::D));
-                vec
+                unary(Comp::NotD)
             }
         }
     }
 }
 
-fn arithmetic(comp: assembler::Comp) -> Vec<assembler::CodeLine> {
+fn unary(comp: assembler::Comp) -> Vec<assembler::CodeLine> {
+    use assembler::*;
+    let mut vec = Vec::with_capacity(7);
+    vec.extend(pop(Dest::D));
+    vec.push(CodeLine::assign(Dest::D, comp));
+    vec.extend(push(Comp::D));
+    vec
+}
+
+fn binary(comp: assembler::Comp) -> Vec<assembler::CodeLine> {
     use assembler::*;
     let mut vec = Vec::with_capacity(12);
     vec.extend(pop(Dest::D));
     vec.extend(pop(Dest::A));
-    vec.push(CodeLine::command(Dest::D, comp));
+    vec.push(CodeLine::assign(Dest::D, comp));
     vec.extend(push(Comp::D));
     vec
 }
@@ -130,10 +131,10 @@ fn push(comp: assembler::Comp) -> [assembler::CodeLine; 5] {
     use assembler::*;
     [
         predefined_symbols::SP.into(),
-        CodeLine::command(Dest::A, Comp::M),
-        CodeLine::command(Dest::M, comp),
+        CodeLine::assign(Dest::A, Comp::M),
+        CodeLine::assign(Dest::M, comp),
         predefined_symbols::SP.into(),
-        CodeLine::command(Dest::M, Comp::MPlusOne),
+        CodeLine::assign(Dest::M, Comp::MPlusOne),
     ]
 }
 
@@ -141,10 +142,10 @@ fn pop(dest: assembler::Dest) -> [assembler::CodeLine; 5] {
     use assembler::*;
     [
         predefined_symbols::SP.into(),
-        CodeLine::command(Dest::M, Comp::MMinusOne),
+        CodeLine::assign(Dest::M, Comp::MMinusOne),
         predefined_symbols::SP.into(),
-        CodeLine::command(Dest::A, Comp::M),
-        CodeLine::command(dest, Comp::M),
+        CodeLine::assign(Dest::A, Comp::M),
+        CodeLine::assign(dest, Comp::M),
     ]
 }
 
@@ -152,27 +153,29 @@ fn comparison(jump: assembler::Jump, label_index: &mut u16) -> Vec<CodeLine> {
     use assembler::*;
 
     let mut vec = Vec::with_capacity(25);
-    vec.extend(pop(Dest::D));
-    vec.extend(pop(Dest::A));
     let label1 = format!("LABEL{}", *label_index);
     let label2 = format!("LABEL{}", *label_index + 1);
     *label_index += 2;
+
+
+    vec.extend(pop(Dest::D));
+    vec.extend(pop(Dest::A));
     vec.extend([
-        CodeLine::command(Dest::D, Comp::AMinusD),
+        CodeLine::assign(Dest::D, Comp::AMinusD),
         CodeLine::variable(label1.clone()),
-        CodeLine::command_full(Dest::default(), Comp::D, jump),
+        CodeLine::test(Dest::default(), Comp::D, jump),
         predefined_symbols::SP.into(),
-        CodeLine::command(Dest::A, Comp::M),
-        CodeLine::command(Dest::M, Comp::Zero),
+        CodeLine::assign(Dest::A, Comp::M),
+        CodeLine::assign(Dest::M, Comp::Zero),
         CodeLine::variable(label2.clone()),
-        CodeLine::command_full(Dest::default(), Comp::Zero, Jump::JMP),
+        CodeLine::goto(),
         CodeLine::Label(label1.into()),
         predefined_symbols::SP.into(),
-        CodeLine::command(Dest::A, Comp::M),
-        CodeLine::command(Dest::M, Comp::NegOne),
+        CodeLine::assign(Dest::A, Comp::M),
+        CodeLine::assign(Dest::M, Comp::NegOne),
         CodeLine::Label(label2.into()),
         predefined_symbols::SP.into(),
-        CodeLine::command(Dest::M, Comp::MPlusOne),
+        CodeLine::assign(Dest::M, Comp::MPlusOne),
     ]);
     vec
 }
