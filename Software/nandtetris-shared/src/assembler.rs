@@ -247,6 +247,30 @@ pub enum CodeLine {
 }
 
 impl CodeLine {
+    pub fn command(dest: Dest, comp: Comp) -> Self {
+        CodeLine::C {
+            dest,
+            comp,
+            jump: Jump::Null,
+        }
+    }
+
+    pub fn command_full(dest: Dest, comp: Comp, jump: Jump) -> Self {
+        CodeLine::C {
+            dest,
+            comp,
+            jump,
+        }
+    }
+
+    pub fn constant(value: u16) -> Self {
+        CodeLine::A(Address::Value(value))
+    }
+
+    pub fn variable(symbol: impl Into<Cow<'static, str>>) -> Self {
+        CodeLine::A(Address::Variable(symbol.into()))
+    }
+
     pub fn from_str(line: &str) -> Self {
         if line.as_bytes()[0] == b'(' {
             CodeLine::Label(line[1..line.len() - 1].to_string())
