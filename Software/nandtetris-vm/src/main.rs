@@ -1,5 +1,4 @@
-use core::fmt;
-use std::{env, fmt::Display, str::FromStr};
+use std::{env, str::FromStr};
 use std::io::Write;
 use nandtetris_shared::assembler;
 
@@ -54,39 +53,80 @@ impl Context {
             VmInstruction::Push { segment, index } => {
                 match segment {
                     Segment::Constant => {
-                        vec![
+                        let mut vec = Vec::with_capacity(7);
+                        vec.extend([
                             CodeLine::A(Address::Value(index)),
                             CodeLine::C {
                                 dest: Dest::D,
                                 comp: Comp::A,
                                 jump: Jump::Null,
                             },
-                            predefined_symbols::SP.into(),
-                            CodeLine::C {
-                                dest: Dest::A,
-                                comp: Comp::M,
-                                jump: Jump::Null,
-                            },
-                            CodeLine::C {
-                                dest: Dest::M,
-                                comp: Comp::D,
-                                jump: Jump::Null,
-                            },
-                            predefined_symbols::SP.into(),
-                            CodeLine::C {
-                                dest: Dest::M,
-                                comp: Comp::MPlusOne,
-                                jump: Jump::Null,
-                            },
-                        ]
+                        ]);
+                        vec.extend(push());
+                        vec
                     }
                 }
             }
             VmInstruction::Add => {
-                todo!();
+                let mut vec = Vec::with_capacity(12);
+                vec.extend(pop(Dest::D));
+                vec.extend(pop(Dest::A));
+                vec.push(CodeLine::C {
+                    dest: Dest::D,
+                    comp: Comp::DPlusA,
+                    jump: Jump::Null,
+                });
+                vec.extend(push());
+                vec
             }
         }
     }
+}
+
+fn push() -> [assembler::CodeLine; 5] {
+    use assembler::*;
+    [
+        predefined_symbols::SP.into(),
+        CodeLine::C {
+            dest: Dest::A,
+            comp: Comp::M,
+            jump: Jump::Null,
+        },
+        CodeLine::C {
+            dest: Dest::M,
+            comp: Comp::D,
+            jump: Jump::Null,
+        },
+        predefined_symbols::SP.into(),
+        CodeLine::C {
+            dest: Dest::M,
+            comp: Comp::MPlusOne,
+            jump: Jump::Null,
+        },
+    ]
+}
+
+fn pop(dest: assembler::Dest) -> [assembler::CodeLine; 5] {
+    use assembler::*;
+    [
+        predefined_symbols::SP.into(),
+        CodeLine::C {
+            dest: Dest::M,
+            comp: Comp::MMinusOne,
+            jump: Jump::Null,
+        },
+        predefined_symbols::SP.into(),
+        CodeLine::C {
+            dest: Dest::A,
+            comp: Comp::M,
+            jump: Jump::Null,
+        },
+        CodeLine::C {
+            dest,
+            comp: Comp::M,
+            jump: Jump::Null,
+        },
+    ]
 }
 
 enum VmInstruction {
@@ -135,6 +175,7 @@ fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use pretty_assertions::assert_eq;
 
     macro_rules! get_test_files {
         ($name:literal) => {
@@ -154,10 +195,11 @@ mod tests {
     macro_rules! test_program {
         ($name:literal) => {
             let (input, expected) = get_test_files!($name);
-            let expected = expected.lines().collect::<Vec<_>>();
+            let expected = expected.trim().lines().collect::<Vec<_>>();
 
             let instructions = Context::default().translate(input);
-            let instructions = instructions.iter().map(|x| x.to_string()).collect::<Vec<_>>();
+            let instructions = instructions.iter().collect::<Vec<_>>();
+
             assert_eq!(instructions, expected);
         };
     }

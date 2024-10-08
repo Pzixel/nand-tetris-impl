@@ -4,5 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-derive_more = {version = "1.0.0", features = ["from_str"]}
+derive_more.workspace = true
 nandtetris-shared = {path = "../nandtetris-shared"}
+
+[dev-dependencies]
+pretty_assertions.workspace = true

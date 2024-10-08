@@ -1,6 +1,6 @@
 use std::{borrow::Cow, str::FromStr};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Dest {
     pub a: bool,
     pub m: bool,
@@ -16,6 +16,24 @@ impl Dest {
 impl From<&Dest> for u16 {
     fn from(value: &Dest) -> u16 {
         u16::from(value.a as u8) << 2 | u16::from(value.d as u8) << 1 | u16::from(value.m as u8)
+    }
+}
+
+impl std::fmt::Display for Dest {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        if self.a {
+            write!(f, "A")?;
+        }
+        if self.m {
+            write!(f, "M")?;
+        }
+        if self.d {
+            write!(f, "D")?;
+        }
+        if self.a || self.m || self.d {
+            write!(f, "=")?;
+        }
+        Ok(())
     }
 }
 
@@ -35,6 +53,22 @@ pub enum Jump {
 impl From<&Jump> for u16 {
     fn from(value: &Jump) -> u16 {
         *value as u16
+    }
+}
+
+impl std::fmt::Display for Jump {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let s = match self {
+            Jump::Null => "",
+            Jump::JGT => concat!(";", stringify!(JGT)),
+            Jump::JEQ => concat!(";", stringify!(JEQ)),
+            Jump::JGE => concat!(";", stringify!(JGE)),
+            Jump::JLT => concat!(";", stringify!(JLT)),
+            Jump::JNE => concat!(";", stringify!(JNE)),
+            Jump::JLE => concat!(";", stringify!(JLE)),
+            Jump::JMP => concat!(";", stringify!(JMP)),
+        };
+        write!(f, "{}", s)
     }
 }
 
@@ -189,6 +223,12 @@ impl From<&Comp> for &'static str {
     }
 }
 
+impl Comp {
+    pub fn as_str(&self) -> &'static str {
+        self.into()
+    }
+}
+
 #[derive(Debug)]
 pub enum Address {
     Value(u16),
@@ -240,6 +280,23 @@ impl CodeLine {
                 comp,
                 dest,
                 jump,
+            }
+        }
+    }
+}
+
+impl std::fmt::Display for CodeLine {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            CodeLine::Label(label) => write!(f, "({})", label),
+            CodeLine::A(Address::Value(value)) => write!(f, "@{}", value),
+            CodeLine::A(Address::Variable(symbol)) => write!(f, "@{}", symbol),
+            CodeLine::C { comp, dest, jump } => {
+                write!(f, "{}{}{}",
+                    dest,
+                    comp.as_str(),
+                    jump
+                )
             }
         }
     }

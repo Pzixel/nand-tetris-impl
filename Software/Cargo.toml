@@ -9,3 +9,4 @@ members = [
 
 [workspace.dependencies]
 derive_more = {version = "1.0.0", features = ["from_str"]}
+pretty_assertions = "1.4.1"
